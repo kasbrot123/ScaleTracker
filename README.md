@@ -2,6 +2,8 @@
 
 Selbst gehostetes Gewichtstagebuch für eine Person. Deine Werte bleiben auf deinem eigenen Server und sind auf PC und Handy immer synchron.
 
+Auch wenn ScaleTracker für das Körpergewicht gedacht ist, ist es nicht darauf beschränkt: Du kannst damit genauso das Gewicht eines Haustiers, eines Bienenstocks oder jeden anderen Messwert verfolgen. Aktuell sind Werte zwischen 20 und 400 möglich, und die Anzeige erfolgt in kg.
+
 ![ScaleTracker Übersicht](docs/screenshot.png)
 
 ## Funktionen
