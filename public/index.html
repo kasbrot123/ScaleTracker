@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1526">
+  <title>ScaleTracker</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main id="login" class="login" hidden>
+    <form id="login-form" class="card login-card">
+      <h1>ScaleTracker</h1>
+      <label>Passwort
+        <input id="login-password" type="password" autocomplete="current-password" required autofocus>
+      </label>
+      <p id="login-error" class="error" role="alert" hidden></p>
+      <button class="primary" type="submit">Anmelden</button>
+    </form>
+  </main>
+
+  <div id="app" hidden>
+    <header class="topbar">
+      <h1>ScaleTracker</h1>
+      <nav class="tabs" aria-label="Hauptnavigation">
+        <button data-view="overview" class="active">Übersicht</button>
+        <button data-view="entries">Messwerte</button>
+        <button data-view="data">Daten</button>
+        <button data-view="settings">Einstellungen</button>
+      </nav>
+      <button id="add-top" class="primary add-top">+ Messung</button>
+    </header>
+
+    <main class="content">
+      <section id="view-overview" class="view">
+        <div class="dash">
+          <div class="hero">
+            <div class="hero-now" id="hero-now"></div>
+            <div class="hero-span" id="hero-span"></div>
+            <div class="hero-deltas" id="hero-deltas"></div>
+          </div>
+          <div class="dash-chart">
+            <div class="chart-head">
+              <h2 id="chart-title">Gewichtsverlauf</h2>
+              <div class="filters">
+                <div class="segmented" id="range" role="group" aria-label="Zeitraum">
+                  <button data-days="7">7 T</button>
+                  <button data-days="30" class="active">30 T</button>
+                  <button data-days="90">90 T</button>
+                  <button data-days="365">1 J</button>
+                  <button data-days="all">Alles</button>
+                  <button data-days="custom">Von–Bis</button>
+                </div>
+                <div class="segmented" id="metric" role="group" aria-label="Tageswert">
+                  <button data-metric="first" class="active">Erster</button>
+                  <button data-metric="mean">Mittel</button>
+                  <button data-metric="min">Min</button>
+                  <button data-metric="max">Max</button>
+                </div>
+                <div class="toggles" role="group" aria-label="Im Graphen einblenden">
+                  <button type="button" class="toggle" id="toggle-extra" aria-pressed="true">Weitere Messungen</button>
+                  <button type="button" class="toggle" id="toggle-band" aria-pressed="false">Min–Max</button>
+                </div>
+              </div>
+              <div class="custom-range" id="custom-range" hidden>
+                <label>Von <input type="date" id="range-from"></label>
+                <label>Bis <input type="date" id="range-to"></label>
+                <button type="button" id="range-first">Ab erster Messung</button>
+              </div>
+            </div>
+            <div id="chart" role="img" aria-label="Gewichtsverlauf als Liniendiagramm. Alle Werte stehen auch im Bereich Messwerte."></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-entries" class="view" hidden>
+        <div class="filters">
+          <div class="segmented" id="entries-mode" role="group" aria-label="Ansicht">
+            <button data-mode="entries" class="active">Messungen</button>
+            <button data-mode="days">Pro Tag</button>
+          </div>
+          <label class="check"><input type="checkbox" id="filter-star"> Nur mit Stern</label>
+          <select id="filter-tag" aria-label="Nach Tag filtern"></select>
+        </div>
+        <div class="card table-card"><div class="table-wrap" id="table"></div></div>
+      </section>
+
+      <section id="view-data" class="view" hidden>
+        <div class="grid-2">
+          <form class="card stack" id="import-form">
+            <h2>CSV importieren</h2>
+            <p class="muted">Eine Zeile pro Messung, zum Beispiel <code>22.11.2026;82,5;Notiz</code>. Ohne Uhrzeit wird 08:00 verwendet, doppelte Zeilen werden übersprungen.</p>
+            <p class="muted">Bereiche ohne Gewicht: <code>12.11.-17.11.2026;;Urlaub</code>. Oder einzelne Tage mit <code>NaN</code>, <code>-</code> oder leerem Gewicht und gleichem Text, zum Beispiel <code>12.11.2026;NaN;Urlaub</code>. Aufeinanderfolgende Tage werden zu einem Bereich.</p>
+            <input type="file" id="import-file" accept=".csv,.txt,text/csv,text/plain">
+            <label>Oder Daten einfügen
+              <textarea id="import-text" rows="7" placeholder="Datum;Gewicht;Notiz&#10;20.11.2026;82,9;&#10;21.11.2026;82,6;*Guter Tag&#10;12.11.-17.11.2026;;Urlaub"></textarea>
+            </label>
+            <button class="primary" type="submit">Importieren</button>
+            <div id="import-result" role="status"></div>
+          </form>
+          <div class="stack">
+            <div class="card stack">
+              <h2>CSV exportieren</h2>
+              <p class="muted">Lädt alle Messungen herunter. Die Datei lässt sich wieder importieren.</p>
+              <a class="button" href="/api/export.csv" download>Export herunterladen</a>
+            </div>
+            <div class="card stack" id="demo-card" hidden>
+              <h2>Demo-Daten</h2>
+              <p class="muted" id="demo-text"></p>
+              <button id="demo-delete" class="danger">Demo-Daten löschen</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-settings" class="view" hidden>
+        <div class="grid-2">
+          <form class="card stack" id="goal-form">
+            <h2>Zielgewicht</h2>
+            <label>Ziel in kg
+              <input id="goal-input" inputmode="decimal" placeholder="z. B. 78,5">
+            </label>
+            <div class="row">
+              <button class="primary" type="submit">Speichern</button>
+              <button type="button" id="goal-clear">Ziel entfernen</button>
+            </div>
+            <p id="goal-msg" class="muted" role="status"></p>
+          </form>
+
+          <form class="card stack" id="period-form">
+            <h2>Zeiträume im Graphen</h2>
+            <label>Tag
+              <input id="period-tag" list="tag-list" placeholder="z. B. Urlaub" required maxlength="40">
+            </label>
+            <div class="row">
+              <label>Von <input id="period-start" type="date" required></label>
+              <label>Bis <input id="period-end" type="date"></label>
+            </div>
+            <button class="primary" type="submit">Zeitraum hinzufügen</button>
+            <p id="period-msg" class="error" role="alert" hidden></p>
+            <ul class="list" id="period-list"></ul>
+          </form>
+
+          <div class="card stack">
+            <h2>Tags</h2>
+            <ul class="list" id="tag-manage"></ul>
+          </div>
+
+          <form class="card stack" id="token-form">
+            <h2>API-Tokens</h2>
+            <p class="muted">Für Programme, die Werte per HTTP senden oder abrufen.</p>
+            <div class="row">
+              <input id="token-name" placeholder="Name, z. B. Skript" required maxlength="60" aria-label="Token-Name">
+              <button class="primary" type="submit">Erstellen</button>
+            </div>
+            <div id="token-new" hidden>
+              <p class="muted">Token jetzt kopieren, er wird nur einmal angezeigt:</p>
+              <code id="token-value" class="token"></code>
+            </div>
+            <ul class="list" id="token-list"></ul>
+          </form>
+
+          <div class="card stack">
+            <h2>Konto</h2>
+            <button id="logout">Abmelden</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navigation">
+      <button data-view="overview" class="active">Übersicht</button>
+      <button data-view="entries">Werte</button>
+      <button id="add-bottom" class="fab" aria-label="Messung hinzufügen">+</button>
+      <button data-view="data">Daten</button>
+      <button data-view="settings">Mehr</button>
+    </nav>
+  </div>
+
+  <dialog id="entry-dialog">
+    <form id="entry-form" class="stack" novalidate>
+      <h2 id="entry-title">Neue Messung</h2>
+      <label>Gewicht in kg
+        <input id="entry-weight" inputmode="decimal" autocomplete="off" required>
+      </label>
+      <div class="row">
+        <label>Datum <input id="entry-date" type="date" required></label>
+        <label>Uhrzeit <input id="entry-time" type="time"></label>
+      </div>
+      <label>Notiz
+        <textarea id="entry-note" rows="2" maxlength="1000"></textarea>
+      </label>
+      <label>Tags, mit Komma getrennt
+        <input id="entry-tags" list="tag-list" autocomplete="off">
+      </label>
+      <label class="check"><input type="checkbox" id="entry-star"> ★ Mit Stern markieren</label>
+      <p id="entry-warn" class="warn" role="alert" hidden></p>
+      <p id="entry-error" class="error" role="alert" hidden></p>
+      <div class="row end">
+        <button type="button" id="entry-delete" class="danger" hidden>Löschen</button>
+        <span class="spacer"></span>
+        <button type="button" id="entry-cancel">Abbrechen</button>
+        <button type="submit" class="primary" id="entry-save">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+  <datalist id="tag-list"></datalist>
+  <div id="toast" role="status" hidden></div>
+
+  <script src="/vendor/echarts.min.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
