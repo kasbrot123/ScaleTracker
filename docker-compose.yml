@@ -4,7 +4,7 @@ services:
     container_name: scaletracker
     restart: unless-stopped
     ports:
-      - "${SCALETRACKER_PORT:-${GEWICHT_PORT:-3003}}:3000"
+      - "${SCALETRACKER_PORT:-3003}:3000"
     environment:
       APP_PASSWORD: ${APP_PASSWORD:?APP_PASSWORD in .env setzen}
       TZ: ${TZ:-Europe/Berlin}
