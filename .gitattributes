@@ -1,0 +1,2 @@
+# Shell-Skripte müssen auch beim Klonen unter Windows LF-Zeilenenden behalten.
+*.sh text eol=lf

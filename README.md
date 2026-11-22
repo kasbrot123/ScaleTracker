@@ -112,10 +112,10 @@ curl -X POST http://<server-ip>:3003/api/import \
 
 ## Backup
 
-Die Daten liegen in einer SQLite-Datenbank im Docker-Volume. So erstellst du im laufenden Betrieb eine Sicherung:
+Die Daten liegen in einer SQLite-Datenbank unter `/data` im Container. Die Rechte dieses Ordners setzt der Container beim Start automatisch. So erstellst du im laufenden Betrieb eine Sicherung:
 
 ```sh
-docker exec scaletracker node --input-type=commonjs -e "const D=require('better-sqlite3');new D('/data/gewicht.db').backup('/data/backup.db').then(()=>process.exit())"
+docker exec -u node scaletracker node --input-type=commonjs -e "const D=require('better-sqlite3');new D('/data/gewicht.db').backup('/data/backup.db').then(()=>process.exit())"
 docker cp scaletracker:/data/backup.db ./scaletracker-backup.db
 ```
 
